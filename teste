@@ -1,0 +1,162 @@
+    import React, { useEffect, useState } from "react";
+    import { View, ScrollView, Text, TouchableOpacity, Image } from "react-native";
+    
+    import { useNavigation } from "@react-navigation/core";
+    
+    import { MenuSuperior } from "../../components/MenuSuperior";
+    import api from "../../services/api";
+    import styles from "./styles";
+    
+    interface EnviromentProps {
+      id: string;
+      name: string;
+      game: IGame;
+      journey: IJourney;
+    }
+    
+    interface IJourney {
+      name: string
+    }
+    
+    interface IGame {
+      id: string;
+      away_team: string;
+      home_team: string;
+    }
+    
+    interface IEtapa {
+      id: number;
+      game: IGame[];
+      journey: IJourney;
+      name: string;
+      start_date: Date;
+      end_date: Date;
+    }
+    
+    
+    
+    export function Calendario() {
+      const [numJornada, setNumJornada] = useState(1);
+      const [enviroments, setEnviroments] = useState<[]>([]);
+      const [etapas, setEtapas] = useState <IEtapa[]>();;
+    
+      const [games, setGames] = useState([]);
+    
+      useEffect(() => {
+    
+        async function loadJourney() {
+          const { data } = await api.get(`stage/journey/${numJornada}`);
+          const result = data;
+    
+          setEtapas(data);
+    
+          result.map((teste: { game: React.SetStateAction<never[]> }) => {
+            setGames(teste.game);
+          });
+    
+        }
+        loadJourney();
+    
+      }, [numJornada]);
+    
+      const handleAdd = () => {
+        setNumJornada(numJornada + 1);
+      };
+    
+      const handleDim = () => {
+        if (numJornada > 1) {
+          setNumJornada(numJornada - 1);
+        }
+      };
+    
+      const arrowLeft = '<';
+      const arrowRight = '>';
+    
+      return (
+        <View>
+          <MenuSuperior />
+          <View style={styles.containerMenu}>
+            <Text>Calendario</Text>
+          </View>
+           <View style={styles.containerCarousel}>
+    
+            <TouchableOpacity style={styles.arrowLeft} onPress={handleDim}>{arrowLeft}</TouchableOpacity>
+            <Text style={styles.textJourney}>Jornada {numJornada}</Text>
+            <TouchableOpacity style={styles.arrowRight} onPress={handleAdd}>{arrowRight}</TouchableOpacity>
+            
+          </View>
+          {etapas  ?(
+            <>
+            {etapas.map((etapa) => {
+              return (
+                <>
+                 <Text>{etapa.name}</Text>
+                {etapa.game.map((item) => {
+                  return (
+                  <ScrollView key={item.id}>
+                    <View style={styles.container}>
+                      <View style={styles.containerGame}>
+                        <View style={styles.containerInfo}>
+                          <View style={styles.timeGame}>
+                            <Text>{item.status}</Text>
+                            <Text>4Q -04:30</Text>
+                          </View>
+                          <View style={styles.border}>
+                            <View
+                              style={{ flex: 1, height: 1, backgroundColor: "#DFDFDF" }}
+                            />
+                          </View>
+                          <View style={styles.containerPlacar} key={item.id}>
+                            <View style={styles.containerTimes}>
+                              <Image
+                                style={styles.logoTeam}
+                                source={{ uri: item.away_team.image }}
+                              />
+                              {
+                                <Text style={styles.titleTeam}>
+                                  {item.away_team.name}
+                                </Text>
+                              }
+                            </View>
+                            <View style={styles.containerScore}>
+                              <Text style={styles.team}>{item.away_team_score}</Text>
+                              <Text style={styles.textVersus}>X</Text>
+                              <Text style={styles.team}>{item.home_team_score}</Text>
+                            </View>
+                            <View style={styles.containerTimes}>
+                              <Image
+                                style={styles.logoTeam}
+                                source={{ uri: item.home_team.image }}
+                              />
+                              {
+                                <Text style={styles.titleTeam}>
+                                  {item.home_team.name}
+                                </Text>
+                              }
+                            </View>
+                          </View>
+                          <View style={styles.localGame}>
+                            <Text style={styles.localTitle}>
+                              {item.stadium.name} | {item.stadium.city}
+                            </Text>
+                          </View>
+                        </View>
+                      </View>
+                    </View> 
+                  </ScrollView>
+                  )
+                })
+                }
+                </>
+              )
+            })}
+            </>         
+           ):(
+            <>
+              <Text>carregando...</Text>
+            </>         
+           )}
+        </View>
+      );
+    }
+    
